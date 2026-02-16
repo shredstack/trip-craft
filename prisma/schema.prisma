@@ -1,0 +1,237 @@
+// TripCraft Database Schema
+// PostgreSQL on Neon, managed via Prisma ORM
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // Neon connection string
+  directUrl = env("DIRECT_URL")     // Neon direct connection (for migrations)
+}
+
+// ============================================
+// USERS
+// ============================================
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?  @map("avatar_url")
+  
+  // Preferences (stored as JSON for flexibility)
+  departCity    String?  @default("Salt Lake City, UT") @map("depart_city")
+  preferences   Json?    // { defaultBudget, tripTypes, priorities, etc. }
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trips     Trip[]
+
+  @@map("users")
+}
+
+// ============================================
+// TRIPS - The core entity users manage
+// ============================================
+model Trip {
+  id     String     @id @default(cuid())
+  userId String     @map("user_id")
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  status      TripStatus @default(DREAMING)
+  
+  // Search criteria used to generate this trip
+  criteria    Json?      // { adults, children, childAges, tripTypes, priorities, etc. }
+  
+  // Travel details
+  departCity  String?    @map("depart_city")
+  startDate   DateTime?  @map("start_date")
+  endDate     DateTime?  @map("end_date")
+  budgetType  String?    @map("budget_type")  // budget, moderate, premium, luxury
+  totalBudget Decimal?   @map("total_budget") @db.Decimal(10, 2)
+  
+  notes       String?    @db.Text
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  destinations  Destination[]
+  tripItems     TripItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("trips")
+}
+
+enum TripStatus {
+  DREAMING   // Just exploring ideas
+  PLANNING   // Actively planning, comparing options
+  BOOKED     // Confirmed and booked
+  COMPLETED  // Trip is done
+  ARCHIVED   // No longer active
+}
+
+// ============================================
+// DESTINATIONS - Places recommended or saved
+// ============================================
+model Destination {
+  id     String @id @default(cuid())
+  tripId String @map("trip_id")
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  name        String
+  region      String?
+  country     String?
+  description String?    @db.Text
+  
+  // AI-generated data
+  matchScore  Int?       @map("match_score")      // 0-100 match percentage
+  aiReasoning String?    @map("ai_reasoning") @db.Text  // Why AI recommended this
+  
+  // Cached external data (Google Places, etc.)
+  placeId       String?  @map("place_id")         // Google Places ID
+  latitude      Decimal? @db.Decimal(10, 7)
+  longitude     Decimal? @db.Decimal(10, 7)
+  avgRating     Decimal? @map("avg_rating") @db.Decimal(2, 1)
+  reviewCount   Int?     @map("review_count")
+  photoUrls     Json?    @map("photo_urls")        // Array of image URLs
+  
+  // Travel logistics
+  flightTime    String?  @map("flight_time")       // e.g. "4.5h"
+  avgCostPp     Decimal? @map("avg_cost_pp") @db.Decimal(10, 2) // Per person
+  bestMonths    String?  @map("best_months")       // e.g. "Mar-Apr"
+  weatherData   Json?    @map("weather_data")       // { avgTemp, rainfall, etc. }
+  
+  // User preferences
+  isSelected    Boolean  @default(false) @map("is_selected")  // User's chosen destination
+  userNotes     String?  @map("user_notes") @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  excursions  Excursion[]
+
+  @@index([tripId])
+  @@map("destinations")
+}
+
+// ============================================
+// EXCURSIONS - Activities at a destination
+// ============================================
+model Excursion {
+  id            String      @id @default(cuid())
+  destinationId String      @map("destination_id")
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?     @db.Text
+  type          ExcursionType
+  
+  // Pricing & logistics
+  priceEstimate String?     @map("price_estimate")   // e.g. "$100/person"
+  priceCents    Int?        @map("price_cents")       // Exact price in cents for sorting
+  duration      String?                               // e.g. "Full day", "2-3 hours"
+  
+  // Family info
+  kidFriendly   Boolean     @default(true) @map("kid_friendly")
+  minAge        Int?        @map("min_age")           // Minimum recommended age
+  kidNotes      String?     @map("kid_notes")         // Specific tips for families
+  
+  // External data
+  placeId       String?     @map("place_id")
+  bookingUrl    String?     @map("booking_url")
+  avgRating     Decimal?    @map("avg_rating") @db.Decimal(2, 1)
+  reviewCount   Int?        @map("review_count")
+  photoUrls     Json?       @map("photo_urls")
+  
+  // AI data
+  aiReasoning   String?     @map("ai_reasoning") @db.Text
+  
+  // User preferences
+  isBooked      Boolean     @default(false) @map("is_booked")
+  userNotes     String?     @map("user_notes") @db.Text
+  sortOrder     Int         @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([destinationId])
+  @@index([type])
+  @@map("excursions")
+}
+
+enum ExcursionType {
+  ADVENTURE
+  CULTURE
+  FOOD
+  NATURE
+  RELAXATION
+  NIGHTLIFE
+  SHOPPING
+  TRANSPORTATION
+  OTHER
+}
+
+// ============================================
+// TRIP ITEMS - Flights, hotels, cars, etc.
+// ============================================
+model TripItem {
+  id     String @id @default(cuid())
+  tripId String @map("trip_id")
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  type        TripItemType
+  name        String
+  description String?       @db.Text
+  
+  // Booking details
+  status      ItemStatus    @default(IDEA)
+  bookingRef  String?       @map("booking_ref")
+  bookingUrl  String?       @map("booking_url")
+  provider    String?                             // e.g. "Delta", "Marriott", "Hertz"
+  
+  // Cost tracking
+  costCents   Int?          @map("cost_cents")
+  currency    String?       @default("USD")
+  
+  // Scheduling
+  startDate   DateTime?     @map("start_date")
+  endDate     DateTime?     @map("end_date")
+  
+  // Flexible metadata
+  metadata    Json?         // { flightNumber, hotelAddress, carType, etc. }
+  
+  userNotes   String?       @map("user_notes") @db.Text
+  sortOrder   Int           @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([tripId])
+  @@index([type])
+  @@map("trip_items")
+}
+
+enum TripItemType {
+  FLIGHT
+  HOTEL
+  CAR_RENTAL
+  TRANSFER       // Airport shuttle, taxi, etc.
+  RESTAURANT
+  INSURANCE
+  DOCUMENT       // Passport, visa, etc.
+  PACKING        // Packing list items
+  OTHER
+}
+
+enum ItemStatus {
+  IDEA           // Just tracking as an option
+  RESEARCHING    // Actively comparing
+  BOOKED         // Confirmed
+  CANCELLED
+}
