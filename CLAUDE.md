@@ -132,4 +132,3 @@ See `.env.example`:
 - **Always run `npm run build`** to verify Edge compatibility after middleware changes
 - **Always scope data to user** - every query should filter by the requesting user's ID
 - **Regenerate Prisma client** (`npx prisma generate`) after any schema changes
-

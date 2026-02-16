@@ -112,9 +112,9 @@ List specific issues, suggestions, or questions about particular lines of code. 
 ### Verdict
 
 Choose one:
-- **Approve**: Ready to merge
-- **Request Changes**: Issues must be addressed before merging
-- **Comment**: Non-blocking suggestions or questions
+- **Approve**: Code is correct and safe to merge. Non-blocking suggestions can be included as comments within the review body.
+- **Request Changes**: Only for real bugs, security vulnerabilities, data loss risks, or breaking changes that would cause user-facing failures or data corruption. **Do not use this for nice-to-have improvements** like more specific HTTP status codes, additional Zod validation, or production hardening when the code already handles the failure case gracefully.
+- **Comment**: Suggestions for improvement that don't block merging — production hardening, additional validation, more specific error responses, etc.
 
 ---
 
@@ -159,15 +159,19 @@ Choose one:
 
 ### Avoid False Alarms
 
-Before flagging an issue, verify it's a real problem:
+Before flagging an issue, verify it's a real problem by checking the actual code in the diff:
 
-1. **Check for existing fallback handling**: If code has a fallback path (e.g., try method A, then fall back to method B), don't flag method B as "fragile" if method A is the primary approach.
+1. **Verify error handling claims against the diff**: Before flagging "missing error handling," trace the code path in the diff to confirm no try/catch, error boundary, or fallback already exists. If an outer try/catch already covers a code block, do not flag individual calls inside it as "unhandled." Distinguish between **missing** error handling (a real bug — flag it) and **could be more specific** error handling (a nice-to-have — mention it as a non-blocking comment, not a required change).
 
-2. **Client-side rendering is expected**: This app uses Client Components with `apiFetch()` for data fetching. Don't flag the absence of Server Components for data fetching - the current architecture uses API routes with client-side fetching.
+2. **Cite accurate line numbers**: When referencing specific code, verify the line numbers match the actual diff. Incorrect line references undermine the review's credibility.
 
-3. **Simple auth is intentional**: The app uses client-generated UUIDs for user identification. Don't flag the lack of traditional authentication (OAuth, JWT, etc.) - this is a deliberate prototype design choice.
+3. **Check for existing fallback handling**: If code has a fallback path (e.g., try method A, then fall back to method B), don't flag method B as "fragile" if method A is the primary approach.
 
-4. **JSON fields are intentional**: Fields like `criteria`, `metadata`, `preferences`, and `weather_data` use JSON storage for flexibility. Don't flag these as "should be normalized" unless there's a concrete query performance issue.
+4. **Client-side rendering is expected**: This app uses Client Components with `apiFetch()` for data fetching. Don't flag the absence of Server Components for data fetching - the current architecture uses API routes with client-side fetching.
+
+5. **Simple auth is intentional**: The app uses client-generated UUIDs for user identification. Don't flag the lack of traditional authentication (OAuth, JWT, etc.) - this is a deliberate prototype design choice.
+
+6. **JSON fields are intentional**: Fields like `criteria`, `metadata`, `preferences`, and `weather_data` use JSON storage for flexibility. Don't flag these as "should be normalized" unless there's a concrete query performance issue.
 
 ### What to Actually Flag
 
