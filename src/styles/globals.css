@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+:root {
+  --coral: #FF6B5A;
+  --coral-dark: #E8523F;
+  --sunset: #FF9F43;
+  --ocean: #0EA5E9;
+  --ocean-deep: #0369A1;
+  --ocean-light: #7DD3FC;
+  --tropical: #10B981;
+  --tropical-dark: #059669;
+  --sand: #FBBF24;
+  --sand-light: #FDE68A;
+  --purple-voyage: #8B5CF6;
+
+  --bg-dark: #0F172A;
+  --bg-card: #1E293B;
+  --bg-card-hover: #273549;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: #334155;
+
+  --gradient-hero: linear-gradient(135deg, #FF6B5A 0%, #FF9F43 30%, #0EA5E9 70%, #8B5CF6 100%);
+  --gradient-ocean: linear-gradient(135deg, #0EA5E9, #8B5CF6);
+  --gradient-sunset: linear-gradient(135deg, #FF6B5A, #FF9F43);
+  --gradient-tropical: linear-gradient(135deg, #10B981, #0EA5E9);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 40px rgba(14, 165, 233, 0.15);
+
+  --font-outfit: "Outfit", sans-serif;
+  --font-sora: "Sora", sans-serif;
+  --font-space: "Space Mono", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sora);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-outfit);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-sunset {
+  background: var(--gradient-sunset);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Float animation for background blobs */
+@keyframes floatBlob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 30px) scale(0.95);
+  }
+}
+
+/* Spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Selection color */
+::selection {
+  background: rgba(14, 165, 233, 0.3);
+  color: var(--text-primary);
+}
+
+/* Focus outline */
+:focus-visible {
+  outline: 2px solid var(--ocean);
+  outline-offset: 2px;
+}
+
+/* Form elements base */
+input, select, textarea {
+  font-family: var(--font-sora);
+}
+
+/* Space Mono for stat values */
+.font-mono-stat {
+  font-family: var(--font-space);
+}
