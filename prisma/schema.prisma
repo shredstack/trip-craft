@@ -22,6 +22,9 @@ model User {
   passwordHash String?  @map("password_hash")
   avatarUrl    String?  @map("avatar_url")
   
+  // Admin access
+  isAdmin      Boolean  @default(false) @map("is_admin")
+
   // Preferences (stored as JSON for flexibility)
   departCity    String?  @default("Salt Lake City, UT") @map("depart_city")
   preferences   Json?    // { defaultBudget, tripTypes, priorities, etc. }
@@ -273,4 +276,86 @@ model Accommodation {
 
   @@index([destinationId])
   @@map("accommodations")
+}
+
+// ============================================
+// CATALOG DESTINATIONS - Curated destination database
+// Used for deterministic filtering before AI recommendation
+// ============================================
+model CatalogDestination {
+  id          String   @id @default(cuid())
+
+  // Core identity
+  name        String                              // e.g. "Bali"
+  region      String                              // e.g. "Ubud, Indonesia"
+  country     String                              // e.g. "Indonesia"
+  continent   String                              // e.g. "Asia"
+  description String   @db.Text                   // 2-3 sentence compelling description
+
+  // === TRIP TYPE SCORES (1-10 each) ===
+  scoreBeach      Int   @default(0) @map("score_beach")
+  scoreAdventure  Int   @default(0) @map("score_adventure")
+  scoreCulture    Int   @default(0) @map("score_culture")
+  scoreNature     Int   @default(0) @map("score_nature")
+  scoreCity       Int   @default(0) @map("score_city")
+  scoreResort     Int   @default(0) @map("score_resort")
+  scoreThemePark  Int   @default(0) @map("score_theme_park")
+  scoreCruise     Int   @default(0) @map("score_cruise")
+
+  // === PRIORITY SCORES (1-10 each) ===
+  scoreKidFriendly  Int   @default(0) @map("score_kid_friendly")
+  scoreRelaxation   Int   @default(0) @map("score_relaxation")
+  scoreFood         Int   @default(0) @map("score_food")
+  scoreSafety       Int   @default(0) @map("score_safety")
+  scoreScenic       Int   @default(0) @map("score_scenic")
+  scoreNightlife    Int   @default(0) @map("score_nightlife")
+
+  // === HARD CONSTRAINT FILTERS ===
+  costTier        String                          // "budget" | "moderate" | "premium" | "luxury"
+  avgDailyCostUsd Int      @map("avg_daily_cost_usd")  // Per person estimate
+  bestMonths      String   @map("best_months")         // e.g. "Nov,Dec,Jan,Feb,Mar"
+  avoidMonths     String?  @map("avoid_months")        // e.g. "Jun,Jul,Aug" (monsoon, etc.)
+  minRecommendedAge Int?   @map("min_recommended_age") // null = suitable for all ages
+
+  // === LOGISTICS ===
+  // Flight times from common US airports (hours, null if not practical)
+  flightTimeNYC     Decimal? @map("flight_time_nyc")   @db.Decimal(3, 1)
+  flightTimeLAX     Decimal? @map("flight_time_lax")   @db.Decimal(3, 1)
+  flightTimeSLC     Decimal? @map("flight_time_slc")   @db.Decimal(3, 1)
+  flightTimeORD     Decimal? @map("flight_time_ord")   @db.Decimal(3, 1)
+  flightTimeDFW     Decimal? @map("flight_time_dfw")   @db.Decimal(3, 1)
+  flightTimeMIA     Decimal? @map("flight_time_mia")   @db.Decimal(3, 1)
+  flightTimeATL     Decimal? @map("flight_time_atl")   @db.Decimal(3, 1)
+  flightTimeSEA     Decimal? @map("flight_time_sea")   @db.Decimal(3, 1)
+
+  visaRequired    Boolean  @default(false) @map("visa_required")   // For US passport holders
+  visaNotes       String?  @map("visa_notes")                      // e.g. "Visa on arrival, 30 days"
+  languageNotes   String?  @map("language_notes")                  // e.g. "English widely spoken"
+  healthNotes     String?  @map("health_notes")                    // e.g. "Malaria prophylaxis recommended"
+
+  // === TAGS ===
+  tags            Json     @default("[]")
+
+  // === GOOGLE PLACES DATA ===
+  placeId         String?  @map("place_id")
+  latitude        Decimal? @db.Decimal(10, 7)
+  longitude       Decimal? @db.Decimal(10, 7)
+  avgRating       Decimal? @map("avg_rating") @db.Decimal(2, 1)
+  reviewCount     Int?     @map("review_count")
+  photoUrls       Json?    @map("photo_urls")           // Array of image URLs
+
+  // === ADMIN METADATA ===
+  status          String   @default("draft")             // "draft" | "published" | "archived"
+  generatedFrom   String?  @map("generated_from")        // The prompt/region used to generate this
+  adminNotes      String?  @map("admin_notes") @db.Text  // Admin's personal notes
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([continent])
+  @@index([costTier])
+  @@index([country])
+  @@unique([name, country])  // Prevent duplicates
+  @@map("catalog_destinations")
 }

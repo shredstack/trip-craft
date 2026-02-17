@@ -77,6 +77,9 @@ export function Navbar() {
           {isAuthenticated && (
             <Link href="/dashboard" style={linkStyle("/dashboard")}>My Trips</Link>
           )}
+          {isAuthenticated && session?.user?.isAdmin && (
+            <Link href="/admin" style={linkStyle("/admin")}>Admin</Link>
+          )}
         </div>
 
         {/* Right side */}
