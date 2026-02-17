@@ -40,6 +40,13 @@ export interface AIResponse {
   destinations: AIDestination[];
 }
 
+export interface PlaceReview {
+  author: string;
+  rating: number;
+  text: string;
+  time: number;
+}
+
 export type TripStatusType = "DREAMING" | "PLANNING" | "BOOKED" | "COMPLETED" | "ARCHIVED";
 
 export type ExcursionTypeValue =

@@ -19,7 +19,7 @@ const defaultCriteria: TripCriteria = {
   childAges: [5, 5],
   tripTypes: [],
   priorities: [],
-  departCity: "Salt Lake City, UT",
+  departCity: "",
   maxFlight: "5 hours",
   budget: "$$ ($1,000–$2,500)",
   travelMonth: "Flexible",
@@ -113,7 +113,11 @@ export function WizardShell() {
         )}
 
         {isLastStep ? (
-          <Button variant="action" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            variant="action"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !criteria.departCity}
+          >
             <Rocket size={16} />
             {isSubmitting ? "Finding destinations..." : "Find Destinations"}
           </Button>

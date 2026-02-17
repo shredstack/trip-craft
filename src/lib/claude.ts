@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { TripCriteria, AIResponse } from "./types";
+import { AI_EXCURSION_TYPE_ENUM, buildTripTypesContext, buildPrioritiesContext } from "./constants";
 
 const anthropic = new Anthropic();
 
@@ -67,7 +68,7 @@ const DESTINATION_TOOL: Anthropic.Tool = {
                   name: { type: "string", description: "Excursion name" },
                   type: {
                     type: "string",
-                    enum: ["ADVENTURE", "CULTURE", "FOOD", "NATURE", "RELAXATION", "NIGHTLIFE", "SHOPPING"],
+                    enum: AI_EXCURSION_TYPE_ENUM,
                     description: "Type of excursion",
                   },
                   description: {
@@ -119,8 +120,10 @@ function buildUserPrompt(criteria: TripCriteria): string {
 - Departing from: ${criteria.departCity}
 - Max flight time: ${criteria.maxFlight}
 - Budget: ${criteria.budget} per person
-- Trip types: ${criteria.tripTypes.join(", ")}
-- Priorities: ${criteria.priorities.join(", ")}
+- Trip types:
+  - ${buildTripTypesContext(criteria.tripTypes)}
+- Priorities:
+  - ${buildPrioritiesContext(criteria.priorities)}
 - Travel window: ${criteria.travelMonth}
 - Trip duration: ${criteria.tripDuration}
 - Additional notes: ${criteria.extraNotes || "None"}`;

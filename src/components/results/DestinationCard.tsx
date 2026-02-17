@@ -69,7 +69,7 @@ export function DestinationCard({ destination, tripId, showActions = true }: Des
         }),
       });
     }
-    router.push(`/trip/${tripId}`);
+    router.push(`/trip/${tripId}/destination/${destination.id}`);
   };
 
   return (

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getUserIdFromRequest, getOrCreateUser } from "@/lib/get-user";
+import { getAuthenticatedUserId } from "@/lib/get-user";
 import type { TripCriteria } from "@/lib/types";
 
 function generateTripName(criteria: TripCriteria): string {
@@ -13,8 +13,7 @@ function generateTripName(criteria: TripCriteria): string {
 
 export async function POST(request: Request) {
   try {
-    const userId = getUserIdFromRequest(request);
-    await getOrCreateUser(userId);
+    const userId = await getAuthenticatedUserId();
 
     const body = await request.json();
     const criteria = body.criteria as TripCriteria;
@@ -39,7 +38,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const userId = getUserIdFromRequest(request);
+    const userId = await getAuthenticatedUserId();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
 

@@ -1,32 +1,13 @@
 "use client";
 
 import { Chip } from "@/components/ui/Chip";
+import { TRIP_TYPES, PRIORITIES } from "@/lib/constants";
 import type { TripCriteria } from "@/lib/types";
 
 interface StepPreferencesProps {
   criteria: TripCriteria;
   onChange: (updates: Partial<TripCriteria>) => void;
 }
-
-const tripTypes = [
-  { label: "🏖 Beach", value: "Beach" },
-  { label: "🏔 Adventure", value: "Adventure" },
-  { label: "🏛 Culture", value: "Culture" },
-  { label: "🌿 Nature", value: "Nature" },
-  { label: "🌆 City", value: "City" },
-  { label: "🏨 Resort", value: "Resort" },
-  { label: "🎢 Theme Park", value: "Theme Park" },
-  { label: "🚢 Cruise", value: "Cruise" },
-];
-
-const priorities = [
-  { label: "👶 Kid-Friendly", value: "Kid-Friendly" },
-  { label: "🧘 Relaxation", value: "Relaxation" },
-  { label: "🍽 Great Food", value: "Great Food" },
-  { label: "🛡 Safety", value: "Safety" },
-  { label: "📸 Scenic", value: "Scenic" },
-  { label: "🌙 Nightlife", value: "Nightlife" },
-];
 
 function toggleItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
@@ -65,7 +46,7 @@ export function StepPreferences({ criteria, onChange }: StepPreferencesProps) {
         Trip Type
       </label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 32 }}>
-        {tripTypes.map((t) => (
+        {TRIP_TYPES.map((t) => (
           <Chip
             key={t.value}
             label={t.label}
@@ -90,7 +71,7 @@ export function StepPreferences({ criteria, onChange }: StepPreferencesProps) {
         Priorities
       </label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        {priorities.map((p) => (
+        {PRIORITIES.map((p) => (
           <Chip
             key={p.value}
             label={p.label}

@@ -3,6 +3,7 @@ import { Outfit, Sora, Space_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { BackgroundAtmosphere } from "@/components/layout/BackgroundAtmosphere";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -40,9 +41,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${sora.variable} ${spaceMono.variable}`}>
       <body>
-        <BackgroundAtmosphere />
-        <Navbar />
-        <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
+        <SessionProvider>
+          <BackgroundAtmosphere />
+          <Navbar />
+          <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
+        </SessionProvider>
       </body>
     </html>
   );

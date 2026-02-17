@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { Trash2, Eye } from "lucide-react";
 import { DestinationCard } from "@/components/results/DestinationCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -21,9 +23,12 @@ interface Destination {
 interface DestinationsTabProps {
   destinations: Destination[];
   tripId: string;
+  onDelete?: (destinationId: string) => void;
 }
 
-export function DestinationsTab({ destinations, tripId }: DestinationsTabProps) {
+export function DestinationsTab({ destinations, tripId, onDelete }: DestinationsTabProps) {
+  const router = useRouter();
+
   if (destinations.length === 0) {
     return (
       <EmptyState
@@ -43,7 +48,67 @@ export function DestinationsTab({ destinations, tripId }: DestinationsTabProps) 
       }}
     >
       {destinations.map((dest) => (
-        <DestinationCard key={dest.id} destination={dest} tripId={tripId} showActions={false} />
+        <div key={dest.id} style={{ position: "relative" }}>
+          <DestinationCard destination={dest} tripId={tripId} showActions={false} />
+
+          {/* Action buttons overlay */}
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <button
+              onClick={() => router.push(`/trip/${tripId}/destination/${dest.id}`)}
+              title="View details"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(15,23,42,0.7)",
+                backdropFilter: "blur(8px)",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <Eye size={16} />
+            </button>
+            {onDelete && (
+              <button
+                onClick={() => {
+                  if (confirm(`Delete "${dest.name}" and all its excursions?`)) {
+                    onDelete(dest.id);
+                  }
+                }}
+                title="Delete destination"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  border: "none",
+                  background: "rgba(15,23,42,0.7)",
+                  backdropFilter: "blur(8px)",
+                  color: "var(--coral)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        </div>
       ))}
     </div>
   );
