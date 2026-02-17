@@ -10,6 +10,7 @@ import { DestinationsTab } from "@/components/trip-detail/DestinationsTab";
 import { ExcursionsTab } from "@/components/trip-detail/ExcursionsTab";
 import { LogisticsTab } from "@/components/trip-detail/LogisticsTab";
 import { NotesTab } from "@/components/trip-detail/NotesTab";
+import { AccommodationsTab } from "@/components/trip-detail/AccommodationsTab";
 import { apiFetch } from "@/lib/user";
 
 interface TripData {
@@ -29,6 +30,7 @@ interface TripData {
     bestMonths: string | null;
     avgRating: number | string | null;
     reviewCount: number | null;
+    country: string | null;
     photoUrls: string[] | null;
     isSelected: boolean;
     excursions: Array<{
@@ -80,6 +82,21 @@ export default function TripDetailPage() {
     router.push("/dashboard");
   };
 
+  const handleDeleteDestination = async (destinationId: string) => {
+    try {
+      await apiFetch(
+        `/api/trips/${tripId}/destinations?destinationId=${destinationId}`,
+        { method: "DELETE" }
+      );
+      setTrip({
+        ...trip!,
+        destinations: trip!.destinations.filter((d) => d.id !== destinationId),
+      });
+    } catch (err) {
+      console.error("Failed to delete destination:", err);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 40px", textAlign: "center" }}>
@@ -121,7 +138,11 @@ export default function TripDetailPage() {
 
       <div style={{ minHeight: 300 }}>
         {activeTab === "destinations" && (
-          <DestinationsTab destinations={trip.destinations} tripId={tripId} />
+          <DestinationsTab
+            destinations={trip.destinations}
+            tripId={tripId}
+            onDelete={handleDeleteDestination}
+          />
         )}
         {activeTab === "excursions" && (
           <ExcursionsTab
@@ -138,6 +159,16 @@ export default function TripDetailPage() {
                 ),
               })
             }
+          />
+        )}
+        {activeTab === "accommodations" && (
+          <AccommodationsTab
+            destinations={trip.destinations.map((d) => ({
+              id: d.id,
+              name: d.name,
+              country: d.country,
+            }))}
+            tripId={tripId}
           />
         )}
         {activeTab === "logistics" && (

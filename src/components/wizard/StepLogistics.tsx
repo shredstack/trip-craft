@@ -1,6 +1,7 @@
 "use client";
 
 import type { TripCriteria } from "@/lib/types";
+import { PlaceAutocomplete } from "@/components/ui/PlaceAutocomplete";
 
 interface StepLogisticsProps {
   criteria: TripCriteria;
@@ -58,11 +59,10 @@ export function StepLogistics({ criteria, onChange }: StepLogisticsProps) {
       {/* Departing From */}
       <div style={{ marginBottom: 24 }}>
         <label style={labelStyle}>Departing From</label>
-        <input
-          type="text"
+        <PlaceAutocomplete
           value={criteria.departCity}
-          onChange={(e) => onChange({ departCity: e.target.value })}
-          placeholder="Salt Lake City, UT"
+          onChange={(val) => onChange({ departCity: val })}
+          placeholder="Search city or airport code..."
           style={inputStyle}
         />
       </div>

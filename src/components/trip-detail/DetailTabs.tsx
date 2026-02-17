@@ -3,6 +3,7 @@
 const tabs = [
   { id: "destinations", label: "Destinations" },
   { id: "excursions", label: "Excursions" },
+  { id: "accommodations", label: "Accommodations" },
   { id: "logistics", label: "Logistics" },
   { id: "notes", label: "Notes" },
 ];
@@ -17,6 +18,7 @@ export function DetailTabs({ active, onChange }: DetailTabsProps) {
     <div
       style={{
         display: "flex",
+        overflowX: "auto",
         borderBottom: "2px solid var(--border)",
         marginBottom: 32,
       }}
@@ -28,7 +30,8 @@ export function DetailTabs({ active, onChange }: DetailTabsProps) {
             key={tab.id}
             onClick={() => onChange(tab.id)}
             style={{
-              padding: "12px 24px",
+              padding: "12px 20px",
+              whiteSpace: "nowrap",
               fontSize: 14,
               fontWeight: 600,
               fontFamily: "inherit",

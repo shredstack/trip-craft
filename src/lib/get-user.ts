@@ -1,24 +1,13 @@
-import { prisma } from "./db";
+import { auth } from "./auth";
 
-export async function getOrCreateUser(userId: string) {
-  let user = await prisma.user.findUnique({ where: { id: userId } });
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        id: userId,
-        email: `${userId}@tripcraft.local`,
-      },
-    });
+/**
+ * Get the authenticated user's ID from the NextAuth session.
+ * Throws if no session exists (should not happen if middleware is configured correctly).
+ */
+export async function getAuthenticatedUserId(): Promise<string> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
   }
-
-  return user;
-}
-
-export function getUserIdFromRequest(request: Request): string {
-  const userId = request.headers.get("x-user-id");
-  if (!userId) {
-    throw new Error("Missing x-user-id header");
-  }
-  return userId;
+  return session.user.id;
 }

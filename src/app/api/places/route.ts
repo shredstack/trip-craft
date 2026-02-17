@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { uploadPhotosToBlob } from "@/lib/blob-storage";
 
 const API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -20,25 +21,32 @@ export async function GET(request: Request) {
     const res = await fetch(url);
     const data = await res.json();
 
-    const results = (data.results || []).slice(0, 5).map(
-      (place: {
-        place_id: string;
-        name: string;
-        rating?: number;
-        user_ratings_total?: number;
-        photos?: Array<{ photo_reference: string }>;
-        geometry?: { location?: { lat: number; lng: number } };
-      }) => ({
-        placeId: place.place_id,
-        name: place.name,
-        rating: place.rating || null,
-        reviewCount: place.user_ratings_total || null,
-        photos: place.photos?.slice(0, 3).map(
-          (p: { photo_reference: string }) =>
-            `https://maps.googleapis.com/maps/api/place/photo?photo_reference=${p.photo_reference}&maxwidth=600&key=${API_KEY}`
-        ) || [],
-        location: place.geometry?.location || null,
-      })
+    const results = await Promise.all(
+      (data.results || []).slice(0, 5).map(
+        async (place: {
+          place_id: string;
+          name: string;
+          rating?: number;
+          user_ratings_total?: number;
+          photos?: Array<{ photo_reference: string }>;
+          geometry?: { location?: { lat: number; lng: number } };
+        }) => {
+          const photoRefs =
+            place.photos
+              ?.slice(0, 3)
+              .map((p: { photo_reference: string }) => p.photo_reference) ?? [];
+          const photos = await uploadPhotosToBlob(photoRefs, "places");
+
+          return {
+            placeId: place.place_id,
+            name: place.name,
+            rating: place.rating || null,
+            reviewCount: place.user_ratings_total || null,
+            photos,
+            location: place.geometry?.location || null,
+          };
+        }
+      )
     );
 
     return NextResponse.json({ results });

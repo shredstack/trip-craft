@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { EXCURSION_TYPE_STYLES, EXCURSION_TYPES } from "@/lib/constants";
 import { apiFetch } from "@/lib/user";
 
 interface Excursion {
@@ -28,16 +29,6 @@ interface ExcursionsTabProps {
   onAdd: (excursion: Excursion) => void;
 }
 
-const typeConfig: Record<string, { color: string; bg: string }> = {
-  ADVENTURE: { color: "var(--coral)", bg: "rgba(255,107,90,0.15)" },
-  CULTURE: { color: "#A78BFA", bg: "rgba(139,92,246,0.15)" },
-  FOOD: { color: "var(--sand)", bg: "rgba(251,191,36,0.15)" },
-  NATURE: { color: "#6EE7B7", bg: "rgba(16,185,129,0.15)" },
-  RELAXATION: { color: "var(--ocean-light)", bg: "rgba(14,165,233,0.15)" },
-  NIGHTLIFE: { color: "#A78BFA", bg: "rgba(139,92,246,0.15)" },
-  SHOPPING: { color: "var(--sand)", bg: "rgba(251,191,36,0.15)" },
-  OTHER: { color: "var(--text-muted)", bg: "rgba(100,116,139,0.15)" },
-};
 
 export function ExcursionsTab({ excursions, tripId, destinations, onAdd }: ExcursionsTabProps) {
   const [showForm, setShowForm] = useState(false);
@@ -174,8 +165,8 @@ export function ExcursionsTab({ excursions, tripId, destinations, onAdd }: Excur
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                 style={inputStyle}
               >
-                {Object.keys(typeConfig).map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {EXCURSION_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
             </div>
@@ -250,7 +241,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 function ExcursionCard({ excursion }: { excursion: Excursion }) {
-  const config = typeConfig[excursion.type] || typeConfig.OTHER;
+  const config = EXCURSION_TYPE_STYLES[excursion.type] || EXCURSION_TYPE_STYLES.OTHER;
 
   return (
     <div

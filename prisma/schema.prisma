@@ -16,10 +16,11 @@ datasource db {
 // USERS
 // ============================================
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  avatarUrl String?  @map("avatar_url")
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?  @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
   
   // Preferences (stored as JSON for flexibility)
   departCity    String?  @default("Salt Lake City, UT") @map("depart_city")
@@ -99,6 +100,7 @@ model Destination {
   avgRating     Decimal? @map("avg_rating") @db.Decimal(2, 1)
   reviewCount   Int?     @map("review_count")
   photoUrls     Json?    @map("photo_urls")        // Array of image URLs
+  reviews       Json?    @map("reviews")            // Array of { author, rating, text, time }
   
   // Travel logistics
   flightTime    String?  @map("flight_time")       // e.g. "4.5h"
@@ -114,7 +116,8 @@ model Destination {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  excursions  Excursion[]
+  excursions      Excursion[]
+  accommodations  Accommodation[]
 
   @@index([tripId])
   @@map("destinations")
@@ -149,6 +152,8 @@ model Excursion {
   reviewCount   Int?        @map("review_count")
   photoUrls     Json?       @map("photo_urls")
   
+  reviews       Json?       @map("reviews")         // Array of { author, rating, text, time }
+
   // AI data
   aiReasoning   String?     @map("ai_reasoning") @db.Text
   
@@ -234,4 +239,38 @@ enum ItemStatus {
   RESEARCHING    // Actively comparing
   BOOKED         // Confirmed
   CANCELLED
+}
+
+// ============================================
+// ACCOMMODATIONS - Hotel/resort suggestions per destination
+// ============================================
+model Accommodation {
+  id            String      @id @default(cuid())
+  destinationId String      @map("destination_id")
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  name             String
+  description      String?     @db.Text
+
+  // Google Places data
+  placeId          String?     @map("place_id")
+  avgRating        Decimal?    @map("avg_rating") @db.Decimal(2, 1)
+  reviewCount      Int?        @map("review_count")
+  photoUrls        Json?       @map("photo_urls")
+  priceLevel       Int?        @map("price_level")           // Google's 0-4 scale
+  formattedAddress String?     @map("formatted_address")
+  websiteUrl       String?     @map("website_url")
+  reviews          Json?       @map("reviews")
+
+  // Location
+  latitude      Decimal?    @db.Decimal(10, 7)
+  longitude     Decimal?    @db.Decimal(10, 7)
+
+  sortOrder     Int         @default(0) @map("sort_order")
+
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([destinationId])
+  @@map("accommodations")
 }

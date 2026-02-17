@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 
 export function Hero() {
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -65,38 +68,77 @@ export function Hero() {
 
       {/* CTAs */}
       <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-        <Link
-          href="/plan"
-          style={{
-            padding: "16px 36px",
-            borderRadius: 14,
-            background: "var(--gradient-sunset)",
-            color: "white",
-            fontSize: 16,
-            fontWeight: 600,
-            textDecoration: "none",
-            boxShadow: "0 8px 32px rgba(255,107,90,0.35)",
-            transition: "all 0.2s",
-          }}
-        >
-          Plan a Trip
-        </Link>
-        <Link
-          href="/dashboard"
-          style={{
-            padding: "16px 36px",
-            borderRadius: 14,
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
-            fontSize: 16,
-            fontWeight: 600,
-            textDecoration: "none",
-            transition: "all 0.2s",
-          }}
-        >
-          My Trips
-        </Link>
+        {isAuthenticated ? (
+          <>
+            <Link
+              href="/plan"
+              style={{
+                padding: "16px 36px",
+                borderRadius: 14,
+                background: "var(--gradient-sunset)",
+                color: "white",
+                fontSize: 16,
+                fontWeight: 600,
+                textDecoration: "none",
+                boxShadow: "0 8px 32px rgba(255,107,90,0.35)",
+                transition: "all 0.2s",
+              }}
+            >
+              Plan a Trip
+            </Link>
+            <Link
+              href="/dashboard"
+              style={{
+                padding: "16px 36px",
+                borderRadius: 14,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                color: "var(--text-primary)",
+                fontSize: 16,
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "all 0.2s",
+              }}
+            >
+              My Trips
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/register"
+              style={{
+                padding: "16px 36px",
+                borderRadius: 14,
+                background: "var(--gradient-sunset)",
+                color: "white",
+                fontSize: 16,
+                fontWeight: 600,
+                textDecoration: "none",
+                boxShadow: "0 8px 32px rgba(255,107,90,0.35)",
+                transition: "all 0.2s",
+              }}
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/login"
+              style={{
+                padding: "16px 36px",
+                borderRadius: 14,
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                color: "var(--text-primary)",
+                fontSize: 16,
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "all 0.2s",
+              }}
+            >
+              Log In
+            </Link>
+          </>
+        )}
       </div>
     </motion.section>
   );
