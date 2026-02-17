@@ -4,6 +4,36 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+  cookies: {
+    sessionToken: {
+      name: "tripcraft.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    csrfToken: {
+      name: "tripcraft.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+    callbackUrl: {
+      name: "tripcraft.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   providers: [
     Credentials({
       credentials: {
