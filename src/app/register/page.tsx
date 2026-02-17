@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { status } = useSession();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +18,13 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect away if already authenticated
+  useEffect(() => {
+    if (status === "authenticated") {
+      window.location.href = "/dashboard";
+    }
+  }, [status]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +66,8 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // Use hard navigation to ensure the new session cookie is picked up
+      window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);

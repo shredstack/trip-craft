@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const protectedPages = ["/plan", "/dashboard", "/results", "/trip"];
-const protectedApi = ["/api/trips", "/api/generate", "/api/places"];
+const protectedPages = ["/plan", "/dashboard", "/results", "/trip", "/admin"];
+const protectedApi = ["/api/trips", "/api/generate", "/api/places", "/api/admin"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,6 +26,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Admin route protection: check isAdmin on JWT token
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
+  if (isAdminRoute && !token.isAdmin) {
+    if (pathname.startsWith("/api/admin")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   return NextResponse.next();
 }
 
@@ -35,8 +44,10 @@ export const config = {
     "/dashboard/:path*",
     "/results/:path*",
     "/trip/:path*",
+    "/admin/:path*",
     "/api/trips/:path*",
     "/api/generate/:path*",
     "/api/places/:path*",
+    "/api/admin/:path*",
   ],
 };

@@ -59,3 +59,66 @@ export type ExcursionTypeValue =
   | "SHOPPING"
   | "TRANSPORTATION"
   | "OTHER";
+
+// ============================================
+// Admin / Catalog Destination types
+// ============================================
+
+export interface CatalogDestinationData {
+  id: string;
+  name: string;
+  region: string;
+  country: string;
+  continent: string;
+  description: string;
+  scoreBeach: number;
+  scoreAdventure: number;
+  scoreCulture: number;
+  scoreNature: number;
+  scoreCity: number;
+  scoreResort: number;
+  scoreThemePark: number;
+  scoreCruise: number;
+  scoreKidFriendly: number;
+  scoreRelaxation: number;
+  scoreFood: number;
+  scoreSafety: number;
+  scoreScenic: number;
+  scoreNightlife: number;
+  costTier: string;
+  avgDailyCostUsd: number;
+  bestMonths: string;
+  avoidMonths: string | null;
+  minRecommendedAge: number | null;
+  flightTimeNYC: number | null;
+  flightTimeLAX: number | null;
+  flightTimeSLC: number | null;
+  flightTimeORD: number | null;
+  flightTimeDFW: number | null;
+  flightTimeMIA: number | null;
+  flightTimeATL: number | null;
+  flightTimeSEA: number | null;
+  visaRequired: boolean;
+  visaNotes: string | null;
+  languageNotes: string | null;
+  healthNotes: string | null;
+  tags: string[];
+  placeId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  avgRating: number | null;
+  reviewCount: number | null;
+  photoUrls: string[] | null;
+  status: string;
+  generatedFrom: string | null;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminStats {
+  byStatus: Record<string, number>;
+  byContinent: Record<string, number>;
+  byCostTier: Record<string, number>;
+  total: number;
+}
