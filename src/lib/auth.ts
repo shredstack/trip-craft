@@ -2,38 +2,10 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { authConfig } from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
-  cookies: {
-    sessionToken: {
-      name: "tripcraft.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    csrfToken: {
-      name: "tripcraft.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-    callbackUrl: {
-      name: "tripcraft.callback-url",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+  ...authConfig,
   providers: [
     Credentials({
       credentials: {
@@ -64,26 +36,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.userId = user.id;
-        token.isAdmin = (user as Record<string, unknown>).isAdmin === true;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token.userId) {
-        session.user.id = token.userId as string;
-      }
-      session.user.isAdmin = token.isAdmin === true;
-      return session;
-    },
-  },
 });

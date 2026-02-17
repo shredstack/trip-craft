@@ -1,12 +1,14 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { authConfig } from "@/lib/auth.config";
+
+const { auth } = NextAuth(authConfig);
 
 const protectedPages = ["/plan", "/dashboard", "/results", "/trip", "/admin"];
 const protectedApi = ["/api/trips", "/api/generate", "/api/places", "/api/admin"];
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
 
   const isProtectedPage = protectedPages.some((p) => pathname.startsWith(p));
   const isProtectedApi = protectedApi.some((p) => pathname.startsWith(p));
@@ -15,28 +17,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req: request });
-
-  if (!token) {
+  if (!req.auth) {
     if (isProtectedApi) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin route protection: check isAdmin on JWT token
+  // Admin route protection
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
-  if (isAdminRoute && !token.isAdmin) {
+  if (isAdminRoute && !req.auth.user?.isAdmin) {
     if (pathname.startsWith("/api/admin")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
