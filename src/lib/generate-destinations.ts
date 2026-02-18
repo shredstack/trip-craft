@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { LlmUsage } from "./recommendation/types";
 
 const anthropic = new Anthropic();
 
@@ -176,9 +177,10 @@ export async function generateCatalogDestinations(
   prompt: string,
   count: number,
   existingNames: string[]
-): Promise<GeneratedCatalogDestination[]> {
+): Promise<{ destinations: GeneratedCatalogDestination[]; usage: LlmUsage }> {
+  const model = "claude-sonnet-4-5-20250929";
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5-20250929",
+    model,
     max_tokens: 16384,
     system: ADMIN_GENERATION_SYSTEM_PROMPT,
     tools: [GENERATE_CATALOG_DESTINATIONS_TOOL],
@@ -192,5 +194,12 @@ export async function generateCatalogDestinations(
   }
 
   const result = toolBlock.input as { destinations: GeneratedCatalogDestination[] };
-  return result.destinations;
+  return {
+    destinations: result.destinations,
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model,
+    },
+  };
 }

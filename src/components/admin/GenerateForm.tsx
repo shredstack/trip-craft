@@ -52,6 +52,7 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
     setLoading(true);
 
     try {
+      // 1. Create job + queue via Inngest
       const res = await apiFetch("/api/admin/generate", {
         method: "POST",
         body: JSON.stringify({
@@ -68,8 +69,32 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
         throw new Error(data.error || "Generation failed");
       }
 
-      const data = await res.json();
-      onGenerated(data.destinations, effectivePrompt);
+      const { jobId } = await res.json();
+
+      // 2. Poll for completion (every 3s, up to 5 minutes)
+      const MAX_POLL_MS = 5 * 60 * 1000;
+      const POLL_INTERVAL_MS = 3000;
+      const start = Date.now();
+
+      while (Date.now() - start < MAX_POLL_MS) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+
+        const pollRes = await apiFetch(`/api/admin/generate?jobId=${jobId}`);
+        if (!pollRes.ok) continue;
+
+        const job = await pollRes.json();
+
+        if (job.status === "completed" && job.destinations) {
+          onGenerated(job.destinations, effectivePrompt);
+          return;
+        }
+
+        if (job.status === "failed") {
+          throw new Error(job.error || "Generation failed");
+        }
+      }
+
+      throw new Error("Generation timed out. Check the Inngest dashboard for details.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {

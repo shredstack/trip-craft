@@ -8,6 +8,7 @@ AI-powered personal travel planner that helps you find the best destinations, ex
 - **Styling:** Tailwind CSS v4
 - **Database:** Neon PostgreSQL + Prisma ORM
 - **AI:** Claude API (Anthropic)
+- **Background Jobs:** Inngest (durable workflow execution)
 - **Data:** Google Places API
 - **Animations:** Framer Motion
 - **Language:** TypeScript
@@ -49,12 +50,33 @@ AI-powered personal travel planner that helps you find the best destinations, ex
    npx prisma migrate dev --name init
    ```
 
-4. **Start the dev server:**
+4. **Start the Inngest dev server** (in a separate terminal):
+   ```bash
+   npx inngest-cli@latest dev
+   ```
+   This opens the Inngest dashboard at [http://localhost:8288](http://localhost:8288) where you can monitor function runs, view step outputs, and replay failed events.
+
+   Or, to specify which app endpoint(s) to discover, use:
+   ```bash
+   npx inngest-cli@latest dev -u http://localhost:<port>/api/inngest
+
+   # Example:
+   npx inngest-cli@latest dev -u http://localhost:3000/api/inngest -u http://localhost:3001/api/inngest
+   ```
+
+   If you ever need a separate Inngest server running locally, use the port flag, `-p`. For example,
+   ```bash
+   npx inngest-cli@latest dev -p 8289 -u http://localhost:3001/api/inngest
+   ```
+
+5. **Start the Next.js dev server:**
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000)
+6. Open [http://localhost:3000](http://localhost:3000)
+
+> **Note:** The Inngest dev server must be running alongside the Next.js dev server for trip generation to work. Inngest automatically discovers the `/api/inngest` serve endpoint.
 
 ## User Flow
 
@@ -88,6 +110,10 @@ src/
 │   ├── db.ts                   # Prisma client singleton
 │   ├── claude.ts               # Claude API integration
 │   ├── google-places.ts        # Google Places helpers
+│   ├── inngest/                # Inngest client + background functions
+│   │   ├── client.ts           # Inngest client instance
+│   │   └── generate-destinations.ts  # Durable generation pipeline
+│   ├── recommendation/         # Multi-step recommendation pipeline
 │   ├── user.ts                 # Client-side user ID + fetch
 │   ├── get-user.ts             # Server-side user helpers
 │   └── types.ts                # Shared TypeScript types
@@ -98,3 +124,9 @@ src/
 ## Deployment
 
 Built for [Vercel](https://vercel.com). Connect your repo and add the environment variables in your Vercel project settings.
+
+### Inngest Setup
+
+1. Enable the [Inngest Vercel integration](https://vercel.com/integrations/inngest) for this project
+2. Set your custom production domain (`trip-craft.shredstack.net`) in the Inngest integration settings
+3. Inngest environment variables (`INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`) are added automatically by the integration

@@ -47,13 +47,13 @@ export function WizardShell() {
       });
       const trip = await tripRes.json();
 
-      // 2. Kick off generation in the background (results page polls for completion)
-      apiFetch("/api/generate", {
+      // 2. Queue generation via Inngest (returns immediately)
+      await apiFetch("/api/generate", {
         method: "POST",
         body: JSON.stringify({ tripId: trip.id }),
       });
 
-      // 3. Redirect immediately to results
+      // 3. Redirect to results (polls for completion)
       router.push(`/results/${trip.id}`);
     } catch {
       setIsSubmitting(false);

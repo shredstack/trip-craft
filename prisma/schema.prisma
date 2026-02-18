@@ -32,7 +32,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  trips     Trip[]
+  trips       Trip[]
+  inngestJobs InngestJob[]
 
   @@map("users")
 }
@@ -358,4 +359,104 @@ model CatalogDestination {
   @@index([country])
   @@unique([name, country])  // Prevent duplicates
   @@map("catalog_destinations")
+}
+
+// ============================================
+// CATALOG GENERATION JOBS - Track admin AI generation requests
+// ============================================
+model CatalogGenerationJob {
+  id        String   @id @default(cuid())
+  status    String   @default("pending")   // "pending" | "running" | "completed" | "failed"
+  prompt    String
+  count     Int
+  results   Json?                           // GeneratedCatalogDestination[] when completed
+  error     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("catalog_generation_jobs")
+}
+
+// ============================================
+// INNGEST JOBS - Unified tracking for all background jobs
+// ============================================
+model InngestJob {
+  id              String          @id @default(cuid())
+  type            InngestJobType
+  status          InngestJobStatus @default(PENDING)
+
+  // Who triggered it
+  userId          String?         @map("user_id")
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Context references
+  tripId          String?         @map("trip_id")
+  inngestEventId  String?         @map("inngest_event_id")
+
+  // LLM details
+  llmPrompt       String?         @map("llm_prompt") @db.Text
+  llmModel        String?         @map("llm_model")
+  totalInputTokens  Int?          @map("total_input_tokens")
+  totalOutputTokens Int?          @map("total_output_tokens")
+
+  // Timing
+  durationMs      Int?            @map("duration_ms")
+
+  // Error info
+  error           String?         @db.Text
+
+  // Flexible metadata
+  metadata        Json?
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  events          InngestJobEvent[]
+
+  @@index([type])
+  @@index([status])
+  @@index([userId])
+  @@index([tripId])
+  @@index([createdAt])
+  @@map("inngest_jobs")
+}
+
+model InngestJobEvent {
+  id            String   @id @default(cuid())
+  jobId         String   @map("job_id")
+  job           InngestJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  status        String                    // PENDING, RUNNING, STEP_COMPLETED, COMPLETED, FAILED
+  stepName      String?  @map("step_name")
+  message       String?  @db.Text
+
+  // Per-step LLM token tracking
+  inputTokens   Int?     @map("input_tokens")
+  outputTokens  Int?     @map("output_tokens")
+
+  // Step duration
+  durationMs    Int?     @map("duration_ms")
+
+  // Step-specific data
+  metadata      Json?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([jobId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("inngest_job_events")
+}
+
+enum InngestJobType {
+  TRIP_GENERATION
+  CATALOG_GENERATION
+}
+
+enum InngestJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
 }
