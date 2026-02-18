@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { TripCriteria, AIResponse } from "./types";
+import type { LlmUsage } from "./recommendation/types";
 import { AI_EXCURSION_TYPE_ENUM, buildTripTypesContext, buildPrioritiesContext } from "./constants";
 
 const anthropic = new Anthropic();
@@ -129,9 +130,12 @@ function buildUserPrompt(criteria: TripCriteria): string {
 - Additional notes: ${criteria.extraNotes || "None"}`;
 }
 
-export async function generateDestinations(criteria: TripCriteria): Promise<AIResponse> {
+export async function generateDestinationsLegacy(
+  criteria: TripCriteria
+): Promise<{ result: AIResponse; usage: LlmUsage }> {
+  const model = "claude-sonnet-4-5-20250929";
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5-20250929",
+    model,
     max_tokens: 16384,
     system: SYSTEM_PROMPT,
     tools: [DESTINATION_TOOL],
@@ -144,5 +148,12 @@ export async function generateDestinations(criteria: TripCriteria): Promise<AIRe
     throw new Error("No tool response from Claude");
   }
 
-  return toolBlock.input as AIResponse;
+  return {
+    result: toolBlock.input as AIResponse,
+    usage: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model,
+    },
+  };
 }

@@ -29,6 +29,8 @@ interface TripData {
   }>;
 }
 
+const MAX_POLL_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
 export default function ResultsPage() {
   const params = useParams();
   const tripId = params.tripId as string;
@@ -38,20 +40,25 @@ export default function ResultsPage() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout;
 
     const pollForResults = async () => {
       try {
         const res = await apiFetch(`/api/trips/${tripId}`);
+        if (!res.ok) return; // Keep polling on server errors
         const data = await res.json();
 
         if (data.destinations && data.destinations.length > 0) {
           setTrip(data);
           setLoading(false);
           clearInterval(interval);
+          clearTimeout(timeout);
         }
       } catch {
         setError("Failed to load results. Please try again.");
         setLoading(false);
+        clearInterval(interval);
+        clearTimeout(timeout);
       }
     };
 
@@ -59,7 +66,19 @@ export default function ResultsPage() {
     pollForResults();
     interval = setInterval(pollForResults, 2000);
 
-    return () => clearInterval(interval);
+    // Stop polling after max duration
+    timeout = setTimeout(() => {
+      clearInterval(interval);
+      setLoading(false);
+      setError(
+        "Generation is taking longer than expected. Your trip may still be processing — check your dashboard shortly."
+      );
+    }, MAX_POLL_DURATION_MS);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [tripId]);
 
   if (loading) return <LoadingScreen />;

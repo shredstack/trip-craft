@@ -122,3 +122,16 @@ export interface AdminStats {
   byCostTier: Record<string, number>;
   total: number;
 }
+
+// ============================================
+// Recommendation Pipeline types (re-exported)
+// ============================================
+
+export type {
+  FilteredCandidate,
+  RankedDestination,
+  PersonalizedDestination,
+  PersonalizedExcursion,
+  PersonalizationResponse,
+  LlmUsage,
+} from "./recommendation/types";
