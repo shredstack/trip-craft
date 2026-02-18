@@ -126,6 +126,27 @@ See `.env.example`:
 - `ANTHROPIC_API_KEY` - Claude API key
 - `GOOGLE_PLACES_API_KEY` - Google Places API key
 
+## Database Migrations
+
+**Every schema change must have a corresponding migration.** The CI workflow (`.github/workflows/migrate.yml`) runs `prisma migrate deploy` on pushes to `main` that touch `prisma/migrations/**`. If a migration file doesn't exist, the change will never reach production.
+
+### Standard workflow (new schema changes)
+After modifying `prisma/schema.prisma`:
+1. Run `npx prisma migrate dev --name <descriptive_name>` to generate and apply a migration
+2. Verify the generated SQL in `prisma/migrations/<timestamp>_<name>/migration.sql` includes **all** your schema changes
+3. Commit the migration file alongside the schema change
+
+### Fixing drift (local DB out of sync from `db push`)
+If `migrate dev` reports drift (tables exist in DB but not in migration history), **do not reset the database**. Instead, create the migration manually and mark it as already applied:
+1. Write the migration SQL by hand based on the schema diff (create the missing tables, enums, indexes, and foreign keys)
+2. Place it in `prisma/migrations/<timestamp>_<name>/migration.sql`
+3. Run `npx prisma migrate resolve --applied <timestamp>_<name>` to tell Prisma the local DB already has these changes
+4. Verify with `npx prisma migrate status` — it should report "Database schema is up to date!"
+
+### Rules
+- **Do not use `prisma db push` as a substitute for migrations.** It syncs the local database without creating a migration file, so the change will not be deployed to production. Only use `db push` for throwaway local prototyping, and always follow up with a proper migration before committing.
+- **Never reset the database to fix drift** — use the manual migration + `migrate resolve` workflow above instead.
+
 ## Critical Warnings
 
 - **Never import database code into middleware.ts** - it runs in Edge runtime and will crash the entire app
