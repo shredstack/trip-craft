@@ -4,6 +4,11 @@ import { generateDestinations } from "@/lib/inngest/generate-destinations";
 import { generateCatalog } from "@/lib/inngest/generate-catalog";
 import { NextResponse } from "next/server";
 
+// Inngest steps run as Vercel function invocations — give them the
+// maximum duration allowed by the Pro plan so large generation batches
+// don't hit FUNCTION_INVOCATION_TIMEOUT.
+export const maxDuration = 300; // seconds (Vercel Pro max)
+
 const handler = serve({
   client: inngest,
   functions: [generateDestinations, generateCatalog],
