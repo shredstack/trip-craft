@@ -69,37 +69,82 @@ export const generateCatalog = inngest.createFunction(
       }
     });
 
-    // ── Generate destinations via Claude ──────────────────────
-    const result = await step.run("generate-destinations", async () => {
-      const genStart = Date.now();
-      const { destinations, usage } = await generateCatalogDestinations(
-        prompt,
-        count,
-        existingNames
-      );
-      const genDuration = Date.now() - genStart;
+    // ── Generate destinations via Claude (batched) ────────────
+    // Large counts (e.g. 50) produce responses that exceed Vercel's
+    // function timeout even with streaming.  Break the work into
+    // batches of BATCH_SIZE, each executed as its own Inngest step so
+    // every batch gets a fresh timeout window.
+    const BATCH_SIZE = 10;
+    const batchCount = Math.ceil(count / BATCH_SIZE);
 
-      if (inngestJobId) {
-        await addJobEvent(inngestJobId, "generate-catalog-destinations", {
-          message: `Generated ${destinations.length} catalog destinations`,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          durationMs: genDuration,
-          metadata: {
+    type BatchResult = {
+      destinations: Awaited<ReturnType<typeof generateCatalogDestinations>>["destinations"];
+      inputTokens: number;
+      outputTokens: number;
+      model: string;
+      durationMs: number;
+    };
+
+    const batchResults: BatchResult[] = [];
+
+    for (let i = 0; i < batchCount; i++) {
+      const batchSize = Math.min(BATCH_SIZE, count - i * BATCH_SIZE);
+      // Collect names generated in previous batches to avoid duplicates
+      const previousNames = batchResults.flatMap((b) =>
+        b.destinations.map((d) => d.name)
+      );
+      const allExcluded = [...existingNames, ...previousNames];
+
+      const batchResult = await step.run(
+        `generate-destinations-batch-${i + 1}`,
+        async () => {
+          const genStart = Date.now();
+          const { destinations, usage } = await generateCatalogDestinations(
+            prompt,
+            batchSize,
+            allExcluded
+          );
+          return {
+            destinations,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
             model: usage.model,
-            destinationCount: destinations.length,
+            durationMs: Date.now() - genStart,
+          };
+        }
+      );
+
+      batchResults.push(batchResult);
+    }
+
+    // Flatten all batches into a single result array and aggregate usage
+    const result = batchResults.flatMap((b) => b.destinations);
+    const totalInputTokens = batchResults.reduce((s, b) => s + b.inputTokens, 0);
+    const totalOutputTokens = batchResults.reduce((s, b) => s + b.outputTokens, 0);
+    const totalGenDuration = batchResults.reduce((s, b) => s + b.durationMs, 0);
+    const usedModel = batchResults[0]?.model ?? "unknown";
+
+    if (inngestJobId) {
+      await step.run("track-generation-usage", async () => {
+        await addJobEvent(inngestJobId, "generate-catalog-destinations", {
+          message: `Generated ${result.length} catalog destinations in ${batchResults.length} batch(es)`,
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          durationMs: totalGenDuration,
+          metadata: {
+            model: usedModel,
+            destinationCount: result.length,
             requestedCount: count,
+            batches: batchResults.length,
           },
         });
 
         await prisma.inngestJob.update({
           where: { id: inngestJobId },
-          data: { llmModel: usage.model },
+          data: { llmModel: usedModel },
         });
-      }
-
-      return destinations;
-    });
+      });
+    }
 
     // ── Enrich destinations with Google Places ────────────────
     const enrichedResult = await step.run("enrich-destinations", async () => {
