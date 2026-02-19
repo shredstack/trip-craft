@@ -181,7 +181,8 @@ export async function generateCatalogDestinations(
   const model = "claude-sonnet-4-5-20250929";
   // ~800 output tokens per destination; pad for JSON overhead
   const estimatedTokens = Math.max(16384, count * 1000);
-  const response = await anthropic.messages.create({
+  // Use streaming to avoid SDK 10-minute timeout on large generations
+  const stream = anthropic.messages.stream({
     model,
     max_tokens: estimatedTokens,
     system: ADMIN_GENERATION_SYSTEM_PROMPT,
@@ -190,14 +191,16 @@ export async function generateCatalogDestinations(
     messages: [{ role: "user", content: buildGenerationPrompt(prompt, count, existingNames) }],
   });
 
-  if (response.stop_reason === "max_tokens") {
+  const message = await stream.finalMessage();
+
+  if (message.stop_reason === "max_tokens") {
     throw new Error(
       `Claude response truncated (hit ${estimatedTokens} token limit). ` +
       `Try generating fewer destinations per batch (requested ${count}).`
     );
   }
 
-  const toolBlock = response.content.find((block) => block.type === "tool_use");
+  const toolBlock = message.content.find((block) => block.type === "tool_use");
   if (!toolBlock || toolBlock.type !== "tool_use") {
     throw new Error("No tool response from Claude");
   }
@@ -206,15 +209,15 @@ export async function generateCatalogDestinations(
   if (!result.destinations || !Array.isArray(result.destinations)) {
     throw new Error(
       `Claude returned malformed tool input (missing destinations array). ` +
-      `stop_reason: ${response.stop_reason}, output_tokens: ${response.usage.output_tokens}`
+      `stop_reason: ${message.stop_reason}, output_tokens: ${message.usage.output_tokens}`
     );
   }
 
   return {
     destinations: result.destinations,
     usage: {
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
+      inputTokens: message.usage.input_tokens,
+      outputTokens: message.usage.output_tokens,
       model,
     },
   };
