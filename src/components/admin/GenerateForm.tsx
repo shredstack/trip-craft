@@ -1,15 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, FlaskConical } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, FlaskConical, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { REGIONAL_PROMPTS } from "@/lib/admin-constants";
 import { apiFetch } from "@/lib/user";
-import type { GeneratedCatalogDestination } from "@/lib/generate-destinations";
-
-interface GenerateFormProps {
-  onGenerated: (destinations: GeneratedCatalogDestination[], prompt: string) => void;
-}
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -34,7 +30,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 8,
 };
 
-export function GenerateForm({ onGenerated }: GenerateFormProps) {
+export function GenerateForm() {
   const [selectedPrompt, setSelectedPrompt] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [count, setCount] = useState(10);
@@ -42,6 +38,7 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
   const [testMode, setTestMode] = useState(false);
   const [testCap, setTestCap] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
   const effectivePrompt = selectedPrompt === "custom" ? customPrompt : selectedPrompt;
@@ -52,7 +49,6 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
     setLoading(true);
 
     try {
-      // 1. Create job + queue via Inngest
       const res = await apiFetch("/api/admin/generate", {
         method: "POST",
         body: JSON.stringify({
@@ -69,37 +65,74 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
         throw new Error(data.error || "Generation failed");
       }
 
-      const { jobId } = await res.json();
-
-      // 2. Poll for completion (every 3s, up to 5 minutes)
-      const MAX_POLL_MS = 5 * 60 * 1000;
-      const POLL_INTERVAL_MS = 3000;
-      const start = Date.now();
-
-      while (Date.now() - start < MAX_POLL_MS) {
-        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-
-        const pollRes = await apiFetch(`/api/admin/generate?jobId=${jobId}`);
-        if (!pollRes.ok) continue;
-
-        const job = await pollRes.json();
-
-        if (job.status === "completed" && job.destinations) {
-          onGenerated(job.destinations, effectivePrompt);
-          return;
-        }
-
-        if (job.status === "failed") {
-          throw new Error(job.error || "Generation failed");
-        }
-      }
-
-      throw new Error("Generation timed out. Check the Inngest dashboard for details.");
+      setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (submitted) {
+    return (
+      <div>
+        <h1
+          style={{
+            fontFamily: "var(--font-outfit)",
+            fontSize: 28,
+            fontWeight: 700,
+            marginBottom: 8,
+          }}
+        >
+          Generate Destinations
+        </h1>
+        <div
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: 40,
+            maxWidth: 640,
+            textAlign: "center",
+          }}
+        >
+          <CheckCircle2
+            size={48}
+            style={{ color: "var(--tropical)", marginBottom: 16 }}
+          />
+          <h2
+            style={{
+              fontFamily: "var(--font-outfit)",
+              fontSize: 20,
+              fontWeight: 600,
+              marginBottom: 8,
+            }}
+          >
+            Job Queued Successfully
+          </h2>
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: 14,
+              marginBottom: 24,
+              lineHeight: 1.6,
+            }}
+          >
+            Your destinations are being generated and enriched in the background.
+            <br />
+            We&apos;ll send you an email when the job is complete.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <Button variant="secondary" onClick={() => setSubmitted(false)}>
+              Generate Another Batch
+            </Button>
+            <Link href="/admin/destinations">
+              <Button variant="action">View Destinations</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -287,7 +320,7 @@ export function GenerateForm({ onGenerated }: GenerateFormProps) {
           }}
         >
           <Sparkles size={16} />
-          {loading ? "Generating..." : `Generate ${testMode ? Math.min(count, testCap) : count} Destinations`}
+          {loading ? "Submitting..." : `Generate ${testMode ? Math.min(count, testCap) : count} Destinations`}
         </Button>
       </div>
     </div>
