@@ -122,7 +122,7 @@ function buildGenerationPrompt(
 ): string {
   let userPrompt = `Generate ${count} travel destinations for: ${prompt}\n\n`;
 
-  if (existingNames.length > 0) {
+  if (existingNames && existingNames.length > 0) {
     userPrompt += `IMPORTANT: Do NOT include any of these destinations that are already in our database:\n`;
     userPrompt += existingNames.join(", ");
     userPrompt += `\n\nSuggest destinations that are NOT on this list. Look for lesser-known alternatives and hidden gems.\n`;

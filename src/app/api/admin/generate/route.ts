@@ -38,6 +38,12 @@ export async function POST(request: Request) {
       data: { prompt: `${prompt} (count: ${actualCount})`, count: actualCount },
     });
 
+    // Look up admin email for job completion notification
+    const adminUser = await prisma.user.findUniqueOrThrow({
+      where: { id: adminUserId },
+      select: { email: true },
+    });
+
     // Create unified Inngest job tracking record
     const inngestJob = await createJob("CATALOG_GENERATION", {
       userId: adminUserId,
@@ -51,6 +57,7 @@ export async function POST(request: Request) {
       data: {
         jobId: catalogJob.id,
         inngestJobId: inngestJob.id,
+        adminEmail: adminUser.email,
         prompt,
         count: actualCount,
         existingNames,
