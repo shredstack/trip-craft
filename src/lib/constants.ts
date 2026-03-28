@@ -1,4 +1,4 @@
-import type { ExcursionTypeValue } from "./types";
+import type { ExcursionTypeValue, ItineraryEventCategoryValue } from "./types";
 
 // ============================================
 // TRIP TYPES - What kind of trip the user wants
@@ -226,6 +226,82 @@ export function buildTripTypesContext(selectedTypes: string[]): string {
     })
     .join("\n  - ");
 }
+
+// ============================================
+// ITINERARY EVENT CATEGORIES
+// Keep in sync with ItineraryEventCategory enum in prisma/schema.prisma
+// ============================================
+
+export interface ItineraryCategoryOption {
+  value: ItineraryEventCategoryValue;
+  label: string;
+  emoji: string;
+  color: string;
+  bg: string;
+}
+
+export const ITINERARY_EVENT_CATEGORIES: readonly ItineraryCategoryOption[] = [
+  {
+    value: "EXCURSION",
+    label: "Excursion",
+    emoji: "🎯",
+    color: "var(--coral)",
+    bg: "rgba(255,107,90,0.15)",
+  },
+  {
+    value: "MEAL",
+    label: "Meal",
+    emoji: "🍽",
+    color: "var(--sand)",
+    bg: "rgba(251,191,36,0.15)",
+  },
+  {
+    value: "TRAVEL",
+    label: "Travel",
+    emoji: "🚗",
+    color: "var(--ocean-light)",
+    bg: "rgba(14,165,233,0.15)",
+  },
+  {
+    value: "CHECK_IN",
+    label: "Check In",
+    emoji: "🏨",
+    color: "#6EE7B7",
+    bg: "rgba(16,185,129,0.15)",
+  },
+  {
+    value: "CHECK_OUT",
+    label: "Check Out",
+    emoji: "🧳",
+    color: "#6EE7B7",
+    bg: "rgba(16,185,129,0.15)",
+  },
+  {
+    value: "FREE_TIME",
+    label: "Free Time",
+    emoji: "🧘",
+    color: "#A78BFA",
+    bg: "rgba(139,92,246,0.15)",
+  },
+  {
+    value: "OTHER",
+    label: "Other",
+    emoji: "✨",
+    color: "var(--text-muted)",
+    bg: "rgba(100,116,139,0.15)",
+  },
+];
+
+/** Map from itinerary event category value to its style config */
+export const ITINERARY_CATEGORY_STYLES: Record<string, { color: string; bg: string }> =
+  Object.fromEntries(
+    ITINERARY_EVENT_CATEGORIES.map((c) => [c.value, { color: c.color, bg: c.bg }])
+  ) as Record<string, { color: string; bg: string }>;
+
+/** Itinerary event category values for the AI tool schema */
+export const AI_ITINERARY_CATEGORY_ENUM: string[] = ITINERARY_EVENT_CATEGORIES.map(
+  (c) => c.value
+);
 
 /** Build a description string for AI context about priorities */
 export function buildPrioritiesContext(selectedPriorities: string[]): string {

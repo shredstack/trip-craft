@@ -19,6 +19,9 @@ export async function GET(
         tripItems: {
           orderBy: { sortOrder: "asc" },
         },
+        itinerary: {
+          select: { id: true },
+        },
       },
     });
 

@@ -3,6 +3,7 @@
 const tabs = [
   { id: "destinations", label: "Destinations" },
   { id: "excursions", label: "Excursions" },
+  { id: "itinerary", label: "Itinerary" },
   { id: "accommodations", label: "Accommodations" },
   { id: "logistics", label: "Logistics" },
   { id: "notes", label: "Notes" },
