@@ -51,8 +51,9 @@ src/
 │   ├── db.ts              # Prisma client singleton
 │   ├── claude.ts          # Claude API integration with tool use
 │   ├── google-places.ts   # Google Places search and enrichment
-│   ├── user.ts            # Client-side user ID (UUID) + apiFetch helper
-│   ├── get-user.ts        # Server-side user extraction from x-user-id header
+│   ├── auth.ts             # NextAuth configuration
+│   ├── user.ts            # Client-side apiFetch helper (sets Content-Type, cookies handle auth)
+│   ├── get-user.ts        # Server-side user extraction from NextAuth session
 │   └── types.ts           # Shared TypeScript interfaces
 └── styles/
     └── globals.css        # Design system (CSS variables, colors, fonts, animations)
@@ -64,13 +65,13 @@ src/
 `/ (landing)` → `/plan (wizard)` → `/results/[tripId] (loading)` → `/trip/[tripId] (detail)` ← `/dashboard`
 
 ### Data Flow
-1. Client calls `apiFetch()` which adds `x-user-id` header (UUID from localStorage)
-2. API routes extract user via `getOrCreateUser()` from the header
+1. Client calls `apiFetch()` which sets `Content-Type: application/json`; authentication is handled automatically via NextAuth session cookies
+2. API routes extract user via `getAuthenticatedUserId()` from the NextAuth session
 3. Prisma handles all database operations
 4. Responses returned as JSON to client components
 
 ### Authentication
-Simple prototype auth: client generates a UUID stored in localStorage, passed as `x-user-id` header on every request. Server auto-creates user records on first request. No OAuth/JWT.
+NextAuth with session cookies. The `apiFetch()` helper in `src/lib/user.ts` is a thin wrapper around `fetch` that sets JSON content-type; it does **not** add custom auth headers. For non-JSON requests (e.g., FormData uploads), raw `fetch()` is fine since session cookies are sent automatically by the browser. Server-side, `getAuthenticatedUserId()` in `src/lib/get-user.ts` reads the user ID from the NextAuth session.
 
 ### Database Schema (Prisma)
 - **User** - Profiles with departure city and preferences (JSON)
@@ -102,7 +103,7 @@ Simple prototype auth: client generates a UUID stored in localStorage, passed as
 
 ### API Routes
 - All routes in `src/app/api/`
-- Always extract user with `getOrCreateUser()` from `src/lib/get-user.ts`
+- Always extract user with `getAuthenticatedUserId()` from `src/lib/get-user.ts`
 - Validate inputs with Zod where possible
 - Return proper HTTP status codes
 - Scope all data queries to the authenticated user's ID
