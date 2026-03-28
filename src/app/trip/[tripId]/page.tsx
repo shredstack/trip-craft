@@ -8,6 +8,7 @@ import { TripDetailHeader } from "@/components/trip-detail/TripDetailHeader";
 import { DetailTabs } from "@/components/trip-detail/DetailTabs";
 import { DestinationsTab } from "@/components/trip-detail/DestinationsTab";
 import { ExcursionsTab } from "@/components/trip-detail/ExcursionsTab";
+import { ItineraryTab } from "@/components/trip-detail/itinerary/ItineraryTab";
 import { LogisticsTab } from "@/components/trip-detail/LogisticsTab";
 import { NotesTab } from "@/components/trip-detail/NotesTab";
 import { AccommodationsTab } from "@/components/trip-detail/AccommodationsTab";
@@ -51,6 +52,7 @@ interface TripData {
     name: string;
     description: string | null;
   }>;
+  itinerary: { id: string } | null;
 }
 
 export default function TripDetailPage() {
@@ -159,6 +161,13 @@ export default function TripDetailPage() {
                 ),
               })
             }
+          />
+        )}
+        {activeTab === "itinerary" && (
+          <ItineraryTab
+            tripId={tripId}
+            hasItinerary={!!trip.itinerary}
+            hasDestinations={trip.destinations.length > 0}
           />
         )}
         {activeTab === "accommodations" && (

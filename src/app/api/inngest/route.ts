@@ -2,6 +2,7 @@ import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
 import { generateDestinations } from "@/lib/inngest/generate-destinations";
 import { generateCatalog } from "@/lib/inngest/generate-catalog";
+import { generateItineraryFn } from "@/lib/inngest/generate-itinerary";
 import { NextResponse } from "next/server";
 
 // Inngest steps run as Vercel function invocations — give them the
@@ -11,7 +12,7 @@ export const maxDuration = 300; // seconds (Vercel Pro max)
 
 const handler = serve({
   client: inngest,
-  functions: [generateDestinations, generateCatalog],
+  functions: [generateDestinations, generateCatalog, generateItineraryFn],
 });
 
 // Only serve Inngest on production deployments.

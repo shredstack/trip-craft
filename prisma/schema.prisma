@@ -66,6 +66,7 @@ model Trip {
 
   destinations  Destination[]
   tripItems     TripItem[]
+  itinerary     Itinerary?
 
   @@index([userId])
   @@index([status])
@@ -168,6 +169,8 @@ model Excursion {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  itineraryEvents ItineraryEvent[]
 
   @@index([destinationId])
   @@index([type])
@@ -452,6 +455,7 @@ model InngestJobEvent {
 enum InngestJobType {
   TRIP_GENERATION
   CATALOG_GENERATION
+  ITINERARY_GENERATION
 }
 
 enum InngestJobStatus {
@@ -459,4 +463,86 @@ enum InngestJobStatus {
   RUNNING
   COMPLETED
   FAILED
+}
+
+// ============================================
+// ITINERARIES - Day-by-day trip schedules
+// ============================================
+model Itinerary {
+  id        String   @id @default(cuid())
+  tripId    String   @unique @map("trip_id")
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  overview  String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  days   ItineraryDay[]
+  events ItineraryEvent[]
+
+  @@map("itineraries")
+}
+
+model ItineraryDay {
+  id          String    @id @default(cuid())
+  itineraryId String    @map("itinerary_id")
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  dayNumber   Int       @map("day_number")
+  date        DateTime?
+  title       String                    // e.g. "Snow Canyon & Red Rock Exploring"
+  theme       String?                   // optional subtitle/theme
+
+  events ItineraryEvent[]
+
+  @@unique([itineraryId, dayNumber])
+  @@map("itinerary_days")
+}
+
+model ItineraryEvent {
+  id          String    @id @default(cuid())
+  itineraryId String    @map("itinerary_id")
+  itinerary   Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  dayId       String?   @map("day_id")       // null = backup event
+  day         ItineraryDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
+
+  excursionId String?   @map("excursion_id") // optional link to existing excursion
+  excursion   Excursion? @relation(fields: [excursionId], references: [id], onDelete: SetNull)
+
+  category       ItineraryEventCategory
+  name           String
+  description    String?  @db.Text
+  tips           String?  @db.Text
+  location       String?
+
+  startTime      String?                // "08:30" (24h format)
+  endTime        String?                // "12:30"
+  timeLabel      String?                // "Morning", "Late Afternoon" (when no specific time)
+
+  sortOrder      Int      @default(0)   @map("sort_order")
+  backupCategory String?  @map("backup_category")  // grouping when dayId is null
+
+  // User journal fields (added after the trip)
+  userRating     Int?     @map("user_rating")       // 1-5 star rating
+  userReview     String?  @map("user_review") @db.Text
+  userPhotoUrls  Json?    @map("user_photo_urls")   // array of Vercel Blob URLs
+  completed      Boolean  @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([dayId])
+  @@index([itineraryId])
+  @@index([excursionId])
+  @@map("itinerary_events")
+}
+
+enum ItineraryEventCategory {
+  EXCURSION
+  MEAL
+  TRAVEL
+  CHECK_IN
+  CHECK_OUT
+  FREE_TIME
+  OTHER
 }

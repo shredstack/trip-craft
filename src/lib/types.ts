@@ -49,6 +49,48 @@ export interface PlaceReview {
 
 export type TripStatusType = "DREAMING" | "PLANNING" | "BOOKED" | "COMPLETED" | "ARCHIVED";
 
+// ============================================
+// Itinerary types
+// ============================================
+
+export type ItineraryEventCategoryValue =
+  | "EXCURSION"
+  | "MEAL"
+  | "TRAVEL"
+  | "CHECK_IN"
+  | "CHECK_OUT"
+  | "FREE_TIME"
+  | "OTHER";
+
+export interface AIItineraryEvent {
+  excursionId?: string | null;
+  category: ItineraryEventCategoryValue;
+  name: string;
+  description: string;
+  tips?: string | null;
+  location?: string | null;
+  startTime?: string | null;  // "08:30" (24h)
+  endTime?: string | null;    // "12:30" (24h)
+  timeLabel?: string | null;  // "Morning", "Late Afternoon"
+}
+
+export interface AIItineraryDay {
+  dayNumber: number;
+  title: string;
+  theme?: string | null;
+  events: AIItineraryEvent[];
+}
+
+export interface AIItineraryBackupEvent extends AIItineraryEvent {
+  backupCategory: string; // "Outdoor Adventures", "Indoor Activities", etc.
+}
+
+export interface AIItineraryResponse {
+  overview: string;
+  days: AIItineraryDay[];
+  backupEvents: AIItineraryBackupEvent[];
+}
+
 export type ExcursionTypeValue =
   | "ADVENTURE"
   | "CULTURE"
